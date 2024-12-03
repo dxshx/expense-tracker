@@ -1,4 +1,4 @@
-const API_URL = 'http://192.168.25.237:3000';
+const API_URL = 'https://expense-tracker-jgdvvhqfu-dxshxs-projects.vercel.app/';
 let token = localStorage.getItem('token');
 let currentUser = localStorage.getItem('currentUser');
 
@@ -59,7 +59,7 @@ async function signup() {
         const data = await response.json();
         showModal('Sign Up', data.message);
     } catch (error) {
-        console.error('Signup error:', error);
+        console.log('Signup error:', error);
         showModal('Error', 'An error occurred during signup. Please try again.');
     }
 }
@@ -83,7 +83,7 @@ async function signin() {
             showModal('Sign In Failed', data.message || 'Please check your credentials.');
         }
     } catch (error) {
-        console.error('Signin error:', error);
+        console.log('Signin error:', error);
         showModal('Error', 'An error occurred during sign in. Please try again.');
     }
 }

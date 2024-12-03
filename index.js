@@ -10,11 +10,7 @@ const JWT_SECRET = "EXPENSES"
 
 const app = express();
 
-app.use(cors({
-    origin: '*', // Use the specific domain instead of '*' in production
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(cors({ origin: '*' }));
 
 
 app.use(express.json())
