@@ -164,7 +164,7 @@ function displayExpenses(expenses) {
         li.innerHTML = `
             <div class="flex justify-between items-center">
                 <span class="font-medium text-gray-800">${expense.description}</span>
-                <span class="text-indigo-600 font-bold">$${expense.amount}</span>
+                <span class="text-indigo-600 font-bold">₹${expense.amount}</span>
             </div>
             <div class="text-sm text-gray-500 mt-1">
                 ${new Date(expense.date).toLocaleDateString()} - ${expense.category}
@@ -186,8 +186,8 @@ function calculateAndDisplayTotals(expenses) {
         }
     });
 
-    needsTotalElement.textContent = `$${needsTotal.toFixed(2)}`;
-    wantsTotalElement.textContent = `$${wantsTotal.toFixed(2)}`;
+    needsTotalElement.textContent = `₹${needsTotal.toFixed(2)}`;
+    wantsTotalElement.textContent = `₹${wantsTotal.toFixed(2)}`;
 }
 
 function showExpenseSection() {
