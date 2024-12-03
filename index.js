@@ -11,7 +11,7 @@ const JWT_SECRET = "EXPENSES"
 const app = express();
 
 app.use(cors({
-    origin: 'https://miniproject-fifthsem.vercel.app',  // Allow only your frontend URL
+    origin: '*',  // Allow only your frontend URL
     methods: ['GET', 'POST', 'PUT', 'DELETE'],  // Allow specific HTTP methods
     allowedHeaders: ['Content-Type', 'Authorization'],  // Allow specific headers
     credentials: true,  // Allow credentials (e.g., cookies, authorization headers)
