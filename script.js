@@ -1,4 +1,4 @@
-const API_URL = 'https://expense-tracker-jgdvvhqfu-dxshxs-projects.vercel.app/';
+const API_URL = 'http://localhost:3000';
 let token = localStorage.getItem('token');
 let currentUser = localStorage.getItem('currentUser');
 
