@@ -14,8 +14,12 @@ const expenseSchema = new mongoose.Schema({
     date: Date,
     description: String,
     amount: Number,
-    category: { type: String, enum: ['Needs', 'Wants']},
-    userId: ObjectId
+    category: { 
+        type: String, 
+        enum: ['Food', 'Transportation', 'Housing', 'Utilities', 'Entertainment', 'Shopping', 'Healthcare', 'Education', 'Other', 'Transfer', 'Received']
+    },
+    userId: ObjectId,
+    transferParty: { type: String, default: null }
 });
 
 export const UserModel = mongoose.model('user', userSchema);

@@ -114,6 +114,49 @@ app.get('/all-expenses', authMiddleware, async(req, res) => {
     }
 })
 
+app.post('/transfer', authMiddleware, async (req, res) => {
+    const senderId = req.userId;
+    const { recipientUsername, amount, description } = req.body;
+
+    try {
+        // Find recipient user
+        const recipient = await UserModel.findOne({ name: recipientUsername });
+        if (!recipient) {
+            return res.status(404).json({ message: "Recipient not found" });
+        }
+
+        // Find sender user
+        const sender = await UserModel.findById(senderId);
+        if (!sender) {
+            return res.status(404).json({ message: "Sender not found" });
+        }
+
+        // Create sender's expense (negative amount)
+        await ExpenseModel.create({
+            date: new Date(),
+            description: `Transfer to ${recipientUsername}: ${description}`,
+            amount: -amount,
+            category: 'Transfer',
+            userId: senderId,
+            transferParty: recipientUsername
+        });
+
+        // Create recipient's record (positive amount)
+        await ExpenseModel.create({
+            date: new Date(),
+            description: `Received from ${sender.name}: ${description}`,
+            amount: amount,
+            category: 'Received',
+            userId: recipient._id,
+            transferParty: sender.name
+        });
+
+        res.json({ message: "Transfer successful!" });
+    } catch (error) {
+        console.error(error); // Add logging for debugging
+        res.status(500).json({ message: "Transfer failed" });
+    }
+});
 
 // Set the server to listen on a port
 const PORT = 3000;

@@ -17,8 +17,11 @@ const categorySelect = document.getElementById('category');
 const addExpenseBtn = document.getElementById('add-expense-btn');
 const expenseList = document.getElementById('expense-list');
 const userNameSpan = document.getElementById('user-name');
-const needsTotalElement = document.getElementById('needs-total');
-const wantsTotalElement = document.getElementById('wants-total');
+const recipientInput = document.getElementById('recipient-username');
+const transferAmountInput = document.getElementById('transfer-amount');
+const transferDescriptionInput = document.getElementById('transfer-description');
+const transferBtn = document.getElementById('transfer-btn');
+
 
 // Modal Elements
 const modal = document.getElementById('custom-modal');
@@ -32,6 +35,7 @@ signinBtn.addEventListener('click', signin);
 signoutBtn.addEventListener('click', signout);
 addExpenseBtn.addEventListener('click', addExpense);
 modalCloseBtn.addEventListener('click', closeModal);
+transferBtn.addEventListener('click', transferMoney);
 
 // Check if user is already authenticated
 if (token && currentUser) {
@@ -126,7 +130,6 @@ async function addExpense() {
             dateInput.value = '';
             descriptionInput.value = '';
             amountInput.value = '';
-            categorySelect.value = 'Needs';
         }
     } catch (error) {
         console.error('Add expense error:', error);
@@ -158,16 +161,53 @@ async function fetchExpenses() {
 
 function displayExpenses(expenses) {
     expenseList.innerHTML = '';
+    const categoryColors = {
+        'Food': 'bg-orange-100 text-orange-800',
+        'Transportation': 'bg-blue-100 text-blue-800',
+        'Housing': 'bg-purple-100 text-purple-800',
+        'Utilities': 'bg-green-100 text-green-800',
+        'Entertainment': 'bg-pink-100 text-pink-800',
+        'Shopping': 'bg-yellow-100 text-yellow-800',
+        'Healthcare': 'bg-red-100 text-red-800',
+        'Education': 'bg-indigo-100 text-indigo-800',
+        'Other': 'bg-gray-100 text-gray-800',
+        'Transfer': 'bg-red-100 text-red-800',
+        'Received': 'bg-green-100 text-green-800'
+    };
+
     expenses.forEach(expense => {
         const li = document.createElement('li');
         li.className = 'bg-white p-4 rounded-lg shadow transition-all duration-300 hover:shadow-md';
+        
+        // Format the description to include transfer details
+        let displayDescription = expense.description;
+        if (expense.transferParty) {
+            if (expense.category === 'Transfer') {
+                displayDescription = `Transfer to ${expense.transferParty}: ${expense.description}`;
+            } else if (expense.category === 'Received') {
+                displayDescription = `Received from ${expense.transferParty}: ${expense.description}`;
+            }
+        }
+
+        // Format amount with proper sign
+        const amountDisplay = expense.category === 'Received' 
+            ? `+₹${Math.abs(expense.amount)}`
+            : `₹${expense.amount}`;
+        
+        const amountClass = expense.category === 'Received' 
+            ? 'text-green-600'
+            : expense.category === 'Transfer' 
+                ? 'text-red-600' 
+                : 'text-indigo-600';
+
         li.innerHTML = `
             <div class="flex justify-between items-center">
-                <span class="font-medium text-gray-800">${expense.description}</span>
-                <span class="text-indigo-600 font-bold">₹${expense.amount}</span>
+                <span class="font-medium text-gray-800">${displayDescription}</span>
+                <span class="font-bold ${amountClass}">${amountDisplay}</span>
             </div>
-            <div class="text-sm text-gray-500 mt-1">
-                ${new Date(expense.date).toLocaleDateString()} - ${expense.category}
+            <div class="flex justify-between items-center text-sm mt-1">
+                <span class="text-gray-500">${new Date(expense.date).toLocaleDateString()}</span>
+                <span class="px-2 py-1 rounded-full ${categoryColors[expense.category]}">${expense.category}</span>
             </div>
         `;
         expenseList.appendChild(li);
@@ -175,19 +215,64 @@ function displayExpenses(expenses) {
 }
 
 function calculateAndDisplayTotals(expenses) {
-    let needsTotal = 0;
-    let wantsTotal = 0;
+    const categoryTotals = {};
+    const categoryColors = {
+        'Food': 'text-orange-600',
+        'Transportation': 'text-blue-600',
+        'Housing': 'text-purple-600',
+        'Utilities': 'text-green-600',
+        'Entertainment': 'text-pink-600',
+        'Shopping': 'text-yellow-600',
+        'Healthcare': 'text-red-600',
+        'Education': 'text-indigo-600',
+        'Other': 'text-gray-600',
+        'Transfer': 'text-red-600',
+        'Received': 'text-green-600'
+    };
 
-    expenses.forEach(expense => {
-        if (expense.category === 'Needs') {
-            needsTotal += parseFloat(expense.amount);
-        } else if (expense.category === 'Wants') {
-            wantsTotal += parseFloat(expense.amount);
-        }
+    // Initialize all categories with 0
+    Object.keys(categoryColors).forEach(category => {
+        categoryTotals[category] = 0;
     });
 
-    needsTotalElement.textContent = `₹${needsTotal.toFixed(2)}`;
-    wantsTotalElement.textContent = `₹${wantsTotal.toFixed(2)}`;
+    // Calculate totals for each category
+    expenses.forEach(expense => {
+        categoryTotals[expense.category] += parseFloat(expense.amount);
+    });
+
+    // Display the totals
+    const categoryTotalsDiv = document.getElementById('category-totals');
+    categoryTotalsDiv.innerHTML = '';
+
+    // Calculate net transfer amount
+    const netTransfer = categoryTotals['Received'] + categoryTotals['Transfer'];
+
+    Object.entries(categoryTotals).forEach(([category, total]) => {
+        // Skip Transfer and Received categories as we'll show net transfer
+        if (category === 'Transfer' || category === 'Received') {
+            return;
+        }
+
+        const categoryDiv = document.createElement('div');
+        categoryDiv.className = 'mb-2';
+        categoryDiv.innerHTML = `
+            <p class="text-sm text-gray-600">${category}:</p>
+            <p class="text-lg font-bold ${categoryColors[category]}">₹${Math.abs(total).toFixed(2)}</p>
+        `;
+        categoryTotalsDiv.appendChild(categoryDiv);
+    });
+
+    // Add net transfer amount if there are any transfers
+    if (categoryTotals['Transfer'] !== 0 || categoryTotals['Received'] !== 0) {
+        const netTransferDiv = document.createElement('div');
+        netTransferDiv.className = 'mb-2';
+        const netTransferColor = netTransfer >= 0 ? 'text-green-600' : 'text-red-600';
+        netTransferDiv.innerHTML = `
+            <p class="text-sm text-gray-600">Net Transfers:</p>
+            <p class="text-lg font-bold ${netTransferColor}">₹${netTransfer.toFixed(2)}</p>
+        `;
+        categoryTotalsDiv.appendChild(netTransferDiv);
+    }
 }
 
 function showExpenseSection() {
@@ -223,6 +308,7 @@ signupBtn.setAttribute('aria-label', 'Sign up');
 signinBtn.setAttribute('aria-label', 'Sign in');
 signoutBtn.setAttribute('aria-label', 'Sign out');
 addExpenseBtn.setAttribute('aria-label', 'Add expense');
+transferBtn.setAttribute('aria-label', 'Transfer money');
 
 // Improve error handling
 window.addEventListener('unhandledrejection', function(event) {
@@ -250,5 +336,50 @@ if (token && currentUser) {
 } else {
     authSection.style.display = 'block';
     expenseSection.style.display = 'none';
+}
+
+async function transferMoney() {
+    if (!token) {
+        showModal('Error', 'You must be signed in to transfer money.');
+        return;
+    }
+
+    const recipient = recipientInput.value.trim();
+    const amount = parseFloat(transferAmountInput.value);
+    const description = transferDescriptionInput.value.trim();
+
+    if (!recipient || !amount || amount <= 0) {
+        showModal('Error', 'Please enter a valid recipient and amount.');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/transfer`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                recipientUsername: recipient,
+                amount: amount,
+                description: description
+            })
+        });
+
+        const data = await response.json();
+        showModal('Transfer', data.message);
+        
+        if (response.ok) {
+            // Clear inputs and refresh expenses
+            recipientInput.value = '';
+            transferAmountInput.value = '';
+            transferDescriptionInput.value = '';
+            fetchExpenses();
+        }
+    } catch (error) {
+        console.error('Transfer error:', error);
+        showModal('Error', 'An error occurred during transfer. Please try again.');
+    }
 }
 
